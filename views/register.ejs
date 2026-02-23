@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Shared head includes: CSS, JS, meta tags. -->
+    <%- include('partials/header') %>
+    <title>Register - BeatsHQ</title>
+</head>
+<body class="bg-hero register-page">
+    <!-- Top navigation with login/register or user links. -->
+    <%- include('partials/navbar', {loggedin: loggedin, username: username}) %>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card bg-dark text-white">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Create Account</h2>
+                        
+                        <!-- Error Display -->
+                        <% if (typeof error !== 'undefined' && error) { %>
+                            <div class="alert alert-danger" role="alert">
+                                <%= error %>
+                            </div>
+                        <% } %>
+                        
+                        <!-- Success Display -->
+                        <% if (typeof success !== 'undefined' && success) { %>
+                            <div class="alert alert-success" role="alert">
+                                <%= success %>
+                            </div>
+                        <% } %>
+
+                        <!-- Registration Form (posts to /register) -->
+                        <form action="/register" method="POST">
+                            <!-- Username Field -->
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="username" 
+                                    name="username" 
+                                    required
+                                    value="<%= typeof formData !== 'undefined' ? formData.username : '' %>"
+                                >
+                                <div class="form-text">Choose a unique username</div>
+                            </div>
+
+                            <!-- Email Field -->
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input 
+                                    type="email" 
+                                    class="form-control" 
+                                    id="email" 
+                                    name="email" 
+                                    required
+                                    value="<%= typeof formData !== 'undefined' ? formData.email : '' %>"
+                                >
+                                <div class="form-text">We'll never share your email</div>
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="password" 
+                                    name="password" 
+                                    required
+                                    minlength="6"
+                                >
+                                <div class="form-text">At least 6 characters</div>
+                            </div>
+
+                            <!-- Confirm Password Field -->
+                            <div class="mb-3">
+                                <label for="password2" class="form-label">Confirm Password</label>
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="password2" 
+                                    name="password2" 
+                                    required
+                                    minlength="6"
+                                >
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                        </form>
+
+                        <!-- Login Link -->
+                        <div class="text-center mt-3">
+                            Already have an account? <a href="/login">Login here</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Shared head includes: CSS, JS, meta tags. -->
+    <%- include('partials/header') %>
+    <title>Admin Dashboard - BeatsHQ</title>
+</head>
+<body class="bg-hero" data-active-tab="<%= (typeof activeTab !== 'undefined' && activeTab) ? activeTab : 'upload' %>">
+    <!-- Top navigation with login/register or user links. -->
+    <%- include('partials/navbar', {loggedin: loggedin, username: username}) %>
+
+    <main class="container py-5">
+        <div class="text-white">
+            <h1 class="display-4 mb-2">Admin Dashboard</h1>
+            <p class="lead mb-4">Welcome, <%= username %>! You have admin privileges.</p>
+            
+            <!-- Flash success message from admin actions. -->
+            <% if (success) { %>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <%= success %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% } %>
+            
+            <!-- Flash error message from admin actions. -->
+            <% if (error) { %>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% } %>
+            
+            <!-- Active tab is server-provided for proper default state. -->
+            <% const currentTab = (typeof activeTab !== 'undefined' && activeTab) ? activeTab : 'packs'; %>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-pills mb-4 gap-2" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link <%= currentTab === 'packs' ? 'active' : '' %>" id="packs-tab" data-bs-toggle="pill" data-bs-target="#packs" type="button" role="tab">
+                        Manage Packs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link <%= currentTab === 'upload' ? 'active' : '' %>" id="upload-tab" data-bs-toggle="pill" data-bs-target="#upload" type="button" role="tab">
+                        Upload Samples
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link <%= currentTab === 'samples' ? 'active' : '' %>" id="samples-tab" data-bs-toggle="pill" data-bs-target="#samples" type="button" role="tab">
+                        Manage Samples
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link <%= currentTab === 'users' ? 'active' : '' %>" id="users-tab" data-bs-toggle="pill" data-bs-target="#users" type="button" role="tab">
+                        Manage Users
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="adminTabContent">
+                
+                <!-- Sample Packs Tab -->
+                <div class="tab-pane fade <%= currentTab === 'packs' ? 'show active' : '' %>" id="packs" role="tabpanel">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-collection"></i> Create New Sample Pack
+                            </h3>
+                            <!-- Create pack form posts to /admin/create-pack. -->
+                            <form action="/admin/create-pack" method="POST" id="createPackForm" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="packName" class="form-label">Pack Name *</label>
+                                        <input type="text" class="form-control" id="packName" name="name" 
+                                               placeholder="e.g., Hip Hop Essentials Vol. 1" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="packGenre" class="form-label">Genre</label>
+                                        <input type="text" class="form-control" id="packGenre" name="genre" 
+                                               placeholder="e.g., Hip Hop">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="packDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="packDescription" name="description" rows="3"
+                                              placeholder="Describe what's included in this pack..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="packCoverImage" class="form-label">Cover Image</label>
+                                    <input type="file" class="form-control" id="packCoverImage" name="coverImage" 
+                                           accept="image/jpeg,image/png,image/gif,image/webp">
+                                    <small class="form-text text-light">Supported formats: JPG, PNG, GIF, WebP (Max 5MB)</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Create Pack
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">All Packs</h3>
+                            <!-- Loading state populated by JS. -->
+                            <div id="packsLoading" class="text-center py-4">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Table is filled dynamically by main.js. -->
+                            <div id="packsTable" class="hidden">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" id="packsSearchInput" placeholder="Search packs by name or genre...">
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Genre</th>
+                                                <th>Credits</th>
+                                                <th>Samples</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="packsTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Empty state if no packs exist. -->
+                            <div id="noPacks" class="hidden text-center py-4">
+                                <p class="text-muted">No packs created yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upload Samples Tab -->
+                <div class="tab-pane fade <%= currentTab === 'upload' ? 'show active' : '' %>" id="upload" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-cloud-upload"></i> Upload New Audio Sample
+                            </h3>
+                            <!-- Upload form posts to /admin/upload-sample. -->
+                            <form action="/admin/upload-sample" method="POST" enctype="multipart/form-data" id="uploadForm">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="title" class="form-label">Title *</label>
+                                            <input type="text" class="form-control" id="title" name="title" 
+                                                   placeholder="Enter sample title" required>
+                                            <div class="form-text text-light">Give your audio sample a catchy, descriptive title</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="type" class="form-label">Sample Type *</label>
+                                            <select class="form-select" id="type" name="type" required>
+                                                <option value="sample" selected>One-Shot</option>
+                                                <option value="loop">Loop</option>
+                                                <option value="track">Track</option>
+                                            </select>
+                                            <div class="form-text text-light">Loops require BPM. Tracks are full-length audio.</div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="credits" class="form-label">Credits *</label>
+                                                <input type="number" class="form-control" id="credits" name="credits" 
+                                                       value="1" min="1" max="999" required>
+                                                <div class="form-text text-light">Set the credit cost for this sample</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row hidden" id="bpmRow">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="bpm" class="form-label">BPM *</label>
+                                                <input type="number" class="form-control" id="bpm" name="bpm" 
+                                                       min="40" max="200" placeholder="e.g., 120">
+                                                <div class="form-text text-light">Beats per minute (required for loops)</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="pack_id" class="form-label">Sample Pack *</label>
+                                                <select class="form-select" id="pack_id" name="pack_id" required>
+                                                    <option value="">Select a pack</option>
+                                                </select>
+                                                <div class="form-text text-light">Samples must belong to a pack</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="audioFile" class="form-label">Audio File *</label>
+                                            <div class="border rounded p-3 bg-dark">
+                                                <button type="button" class="btn btn-light w-100 mb-2" id="chooseFileBtn">Choose File</button>
+                                                <p class="text-light mb-0">MP3, WAV, M4A, OGG - Max 50MB</p>
+                                            </div>
+                                            <p class="text-white mt-2" id="selectedFileText"></p>
+                                            <input type="file" class="hidden" id="audioFile" name="audioFile" 
+                                                   accept=".mp3,.wav,.m4a,.ogg" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <button type="reset" class="btn btn-outline-secondary">Reset Form</button>
+                                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                        <i class="bi bi-upload"></i> Upload Sample
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Manage Samples Tab -->
+                <div class="tab-pane fade <%= currentTab === 'samples' ? 'show active' : '' %>" id="samples" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">All Audio Samples</h3>
+                            <!-- Loading state populated by JS. -->
+                            <div id="samplesLoading" class="text-center py-4">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Table is filled dynamically by main.js. -->
+                            <div id="samplesTable" class="hidden">
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-2 mb-md-0">
+                                        <input type="text" class="form-control" id="samplesSearchInput" placeholder="Search samples by title, filename, or uploader...">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select" id="samplesPackFilter">
+                                            <option value="">All packs</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Type</th>
+                                                <th>BPM</th>
+                                                <th>Credits</th>
+                                                <th>Pack</th>
+                                                <th>Uploaded By</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="samplesTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Empty state if no samples exist. -->
+                            <div id="noSamples" class="hidden text-center py-4">
+                                <p class="text-muted">No samples uploaded yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Manage Users Tab -->
+                <div class="tab-pane fade <%= currentTab === 'users' ? 'show active' : '' %>" id="users" role="tabpanel">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">Grant Credits</h3>
+                            <form action="/admin/grant-credits" method="POST" id="grantCreditsForm">
+                                <div class="row">
+                                    <div class="col-md-5 mb-3">
+                                        <label for="creditRecipient" class="form-label">Recipient *</label>
+                                        <select class="form-select" id="creditRecipient" name="recipient_id" required>
+                                            <option value="">Select a user</option>
+                                        </select>
+                                        <div class="form-text text-light" id="creditRecipientMeta"></div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="creditAmount" class="form-label">Amount *</label>
+                                        <input type="number" class="form-control" id="creditAmount" name="amount" min="1" max="9999" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="creditNote" class="form-label">Note</label>
+                                        <input type="text" class="form-control" id="creditNote" name="note" placeholder="Reason or class demo">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-coin"></i> Grant Credits
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">All Users</h3>
+                            <!-- Loading state populated by JS. -->
+                            <div id="usersLoading" class="text-center py-4">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Table is filled dynamically by main.js. -->
+                            <div id="usersTable" class="hidden">
+                                <!-- Search input for client-side filtering. -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" id="usersSearchInput" placeholder="Search users by name or email...">
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Email</th>
+                                                <th>Credits</th>
+                                                <th>Admin</th>
+                                                <th>Member Since</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usersTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4">Recent Credit Grants</h3>
+                            <div id="creditGrantsLoading" class="text-center py-4">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="creditGrantsTable" class="hidden">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Grantor</th>
+                                                <th>Recipient</th>
+                                                <th>Amount</th>
+                                                <th>Note</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="creditGrantsTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div id="noCreditGrants" class="hidden text-center py-4">
+                                <p class="text-muted">No credit grants yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Sample Modal -->
+    <div class="modal fade" id="editSampleModal" tabindex="-1" aria-labelledby="editSampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content modal-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSampleModalLabel">Edit Sample</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" id="editSampleForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editSampleId" name="sampleId">
+                        
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="editTitle" name="title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editType" class="form-label">Sample Type *</label>
+                            <select class="form-select" id="editType" name="type" required>
+                                <option value="sample">One-Shot</option>
+                                <option value="loop">Loop</option>
+                                <option value="track">Track</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" id="editBpmField">
+                            <label for="editBpm" class="form-label">BPM</label>
+                            <input type="number" class="form-control" id="editBpm" name="bpm" min="1" max="300">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editCredits" class="form-label">Credits *</label>
+                            <input type="number" class="form-control" id="editCredits" name="credits" min="1" max="999" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editPackId" class="form-label">Sample Pack *</label>
+                                <select class="form-select" id="editPackId" name="pack_id" required>
+                                    <option value="">Select a pack</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Pack Modal -->
+    <div class="modal fade" id="editPackModal" tabindex="-1" aria-labelledby="editPackModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content modal-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPackModalLabel">Edit Sample Pack</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" id="editPackForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="hidden" id="editPackIdField" name="packId">
+                        
+                        <div class="mb-3">
+                            <label for="editPackName" class="form-label">Pack Name *</label>
+                            <input type="text" class="form-control" id="editPackName" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editPackDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editPackDescription" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editPackGenre" class="form-label">Genre</label>
+                            <input type="text" class="form-control" id="editPackGenre" name="genre">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editPackCoverImage" class="form-label">Cover Image</label>
+                            <div id="editPackCoverPreview" class="mb-2"></div>
+                            <input type="file" class="form-control" id="editPackCoverImage" name="coverImage" 
+                                   accept="image/jpeg,image/png,image/gif,image/webp">
+                            <small class="form-text text-white-50">Supported formats: JPG, PNG, GIF, WebP (Max 5MB). Leave empty to keep current image.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer includes scripts and site links. -->
+    </script>
+    <%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Shared head includes: CSS, JS, meta tags. -->
+    <%- include('partials/header') %>
+    <title><%= pack.name %> - BeatsHQ</title>
+</head>
+<body class="bg-hero">
+    <!-- Top navigation with login/register or user links. -->
+    <%- include('partials/navbar', {loggedin: loggedin, username: username}) %>
+
+    <main class="container py-5">
+        <div class="text-white">
+            <!-- Back Button -->
+            <div class="mb-4">
+                <a href="/packs" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> Back to Packs
+                </a>
+            </div>
+
+            <!-- Error state for pack or sample loading. -->
+            <% if (error) { %>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% } %>
+
+            <!-- Success message after full pack download. -->
+            <% if (typeof success !== 'undefined' && success) { %>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    Pack downloaded successfully! It’s now in your library.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% } %>
+
+            <!-- Pack Header -->
+            <div class="pack-header pack-card pack-header-card" style="<%= pack.cover_image ? "background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)), url('/public/images/pack-covers/" + pack.cover_image + "');" : "" %>">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="display-4 mb-3"><%= pack.name %></h1>
+                        
+                        <% if (pack.genre) { %>
+                            <span class="badge bg-success fs-5 mb-3"><%= pack.genre %></span>
+                        <% } %>
+                        
+                        <% if (pack.description) { %>
+                            <p class="lead mb-3"><%= pack.description %></p>
+                        <% } %>
+                        
+                    </div>
+                    
+                    <div class="col-lg-4 text-center">
+                        <div class="mb-3">
+                            <h5 class="text-white-50 mb-2">Full Pack Price</h5>
+                            <div class="pack-price text-white mb-3">
+                                <span id="totalPackPrice"><%= totalPackPrice || 0 %></span> Credits
+                            </div>
+                        </div>
+                        
+                        <!-- Logged-in view shows download CTA and credits. -->
+                        <% if (loggedin) { %>
+                            <% if (userCredits < totalPackPrice) { %>
+                                <button class="btn btn-secondary btn-lg w-100" disabled>
+                                    <i class="bi bi-lock"></i> Insufficient Credits
+                                </button>
+                                <small class="text-muted d-block mt-2">
+                                    You need <%= totalPackPrice - userCredits %> more credits for full pack
+                                </small>
+                            <% } else { %>
+                                <form method="POST" action="/packs/download/<%= pack.id %>">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <i class="bi bi-download"></i> Download Full Pack
+                                    </button>
+                                </form>
+                            <% } %>
+                            <small class="text-white-50 d-block mt-2">
+                                You have <%= userCredits %> credits
+                            </small>
+                        <% } else { %>
+                            <!-- Visitors must log in to download. -->
+                            <a href="/login" class="btn btn-outline-light btn-lg w-100">
+                                <i class="bi bi-box-arrow-in-right"></i> Login to Download
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Samples in Pack -->
+            <h2 class="mb-4">
+                <i class="bi bi-music-note-list"></i> Included Samples (<%= samples.length %>)
+            </h2>
+
+            <% if (samples.length === 0) { %>
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox icon-empty"></i>
+                    <p class="mt-3 text-muted">This pack doesn't have any samples yet.</p>
+                </div>
+            <% } else { %>
+                <!-- Render each sample with player and download/buy button. -->
+                <div class="row">
+                    <% samples.forEach(function(sample) { %>
+                        <div class="col-12">
+                            <div class="sample-card sample-card--row sample-card--pack-detail<%= pack.cover_image ? ' sample-card--with-cover' : '' %>" style="<%= pack.cover_image ? "background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/public/images/pack-covers/" + pack.cover_image + "');" : "" %>">
+                                <div class="sample-card__meta">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="text-white mb-0"><%= sample.title %></h5>
+                                        <span class="badge bg-warning text-dark"><%= sample.credits %> Credit<%= sample.credits !== 1 ? 's' : '' %></span>
+                                    </div>
+                                    
+                                    <div class="mt-2">
+                                        <span class="badge <%= sample.type === 'loop' ? 'bg-info' : 'bg-secondary' %> me-2">
+                                            <%= sample.type === 'loop' ? 'Loop' : (sample.type === 'track' ? 'Track' : 'One-Shot') %>
+                                        </span>
+                                        <% if (sample.type === 'loop' && sample.bpm) { %>
+                                            <span class="badge bg-dark"><%= sample.bpm %> BPM</span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                
+                                <div class="sample-card__controls">
+                                    <audio controls controlsList="nodownload" preload="none">
+                                        <source src="/samples/preview/<%= sample.id %>" type="audio/mpeg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    
+                                    <% if (loggedin) { %>
+                                        <% if (userCredits >= sample.credits) { %>
+                                            <form method="POST" action="/samples/download/<%= sample.id %>" class="mb-0">
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-download"></i> Download
+                                                </button>
+                                            </form>
+                                        <% } else { %>
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="bi bi-lock"></i> Insufficient Credits
+                                            </button>
+                                        <% } %>
+                                    <% } else { %>
+                                        <a href="/login" class="btn btn-outline-light btn-sm">
+                                            <i class="bi bi-box-arrow-in-right"></i> Login to Download
+                                        </a>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+    </main>
+    <%- include('partials/footer') %>
+</body>
+</html>

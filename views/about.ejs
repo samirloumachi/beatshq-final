@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Shared head includes: CSS, JS, meta tags. -->
+    <%- include('partials/header') %>
+    <title>About - BeatsHQ</title>
+</head>
+<body class="bg-hero">
+    <!-- Top navigation with login/register or user links. -->
+    <%- include('partials/navbar', {loggedin: loggedin, username: username}) %>
+
+    <main class="container py-5">
+        <div class="text-white">
+            <!-- Static marketing copy. -->
+            <h2 class="mb-4">About BeatsHQ</h2>
+            <p class="lead">Welcome to BeatsHQ.com – your go-to destination for discovering, downloading, and exploring high-quality music samples and beats. Our mission is to provide music creators, producers, and hobbyists with an easy-to-use platform where they can find the sounds they need to bring their projects to life.</p>
+            <p>At BeatsHQ.com, we believe that great music starts with great tools. That’s why we curate a variety of samples across different genres, ensuring you have access to fresh, inspiring sounds whenever you need them. Whether you’re a beginner learning the ropes or a seasoned producer crafting your next hit, BeatsHQ.com is designed to make your creative process smoother and more enjoyable.</p>
+            <p>Our team is passionate about music and technology, and we’re committed to continuously improving our platform to better serve the creative community. Thank you for stopping by – explore, download, and let your music shine!</p>
+        </div>
+    </main>
+    <%- include('partials/footer') %>
+</body>
+</html>

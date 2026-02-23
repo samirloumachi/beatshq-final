@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Shared head includes: CSS, JS, meta tags. -->
+    <%- include('partials/header') %>
+    <title>Login - BeatsHQ</title>
+</head>
+<body class="bg-hero">
+    <!-- Top navigation with login/register or user links. -->
+    <%- include('partials/navbar', {loggedin: loggedin, username: username}) %>
+
+    <main class="container py-5">
+        <!-- Brand logo for recognition. -->
+        <div class="text-center mb-4">
+            <img src="/public/images/beatshq-logo.png" alt="BeatsHQ Logo" class="logo-login">
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card bg-dark text-white shadow-sm">
+                    <div class="card-body">
+                        <h3 class="card-title mb-4">Login to BeatsHQ</h3>
+                        
+                        <!-- Flash error message from server. -->
+                        <% if (error) { %>
+                            <div class="alert alert-danger" role="alert">
+                                <%= error %>
+                            </div>
+                        <% } %>
+                        
+                        <!-- Flash success message (e.g., after registration). -->
+                        <% if (success) { %>
+                            <div class="alert alert-success" role="alert">
+                                <%= success %>
+                            </div>
+                        <% } %>
+                        
+                        <!-- Login form posts to /auth. -->
+                        <form action="/auth" method="POST">
+                            <!-- Username field. -->
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
+                            </div>
+                            
+                            <!-- Password field. -->
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+                            </div>
+                            
+                            <!-- Submit button. -->
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                        
+                        <!-- Secondary action: registration link. -->
+                        <hr class="my-4">
+                        
+                        <p class="mb-0 text-center">
+                            Don't have an account? <a href="/register" class="text-primary">Register</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('partials/footer') %>
+</body>
+</html>

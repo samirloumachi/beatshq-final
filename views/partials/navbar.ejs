@@ -1,0 +1,50 @@
+<!-- Primary navigation used across all pages. -->
+<nav class="navbar navbar-expand-sm bg-light">
+    <div class="container-fluid">
+        <!-- Logo links back to home. -->
+        <a class="navbar-brand" href="/">
+            <img src="/public/images/beatshq-logo.png" alt="BeatsHQ Logo" height="30" class="d-inline-block align-text-top me-2 navbar-logo">
+        </a>
+        
+        <!-- Main nav links. -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/packs">All Packs</a>
+            </li>
+
+
+            <% if (loggedin && isAdmin) { %>
+                <!-- Admin-only link. -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin">Admin Dashboard</a>
+                </li>
+            <% } %>
+            <% if (loggedin) { %>
+                <!-- Links for signed-in users. -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/library">My Library</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout (<%= username %>)</a>
+                </li>
+
+
+
+            <% } else { %>
+                <!-- Links for visitors. -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/register">Register</a>
+                </li>
+            <% } %>
+
+
+        </ul>
+    </div>
+</nav>
